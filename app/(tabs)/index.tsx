@@ -1,74 +1,103 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { StyleSheet } from 'react-native';
+import {
+    Camera,
+    useCameraDevice,
+    useCameraPermission,
+    useFrameProcessor,
+} from 'react-native-vision-camera';
+import { useEffect, useRef } from 'react';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { useResizePlugin } from 'vision-camera-resize-plugin';
+import { io, Socket } from "socket.io-client";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import {runOnJS} from "react-native-reanimated";
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+
+function PermissionsPage() {
+    return null;
+}
+function NoCameraDeviceError() {
+    return null;
 }
 
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
+export default function HomeScreen() {
+    const device = useCameraDevice('back');
+    const { hasPermission } = useCameraPermission();
+    const { resize } = useResizePlugin();
+
+    const socketRef = useRef<Socket | null>(null);
+
+    useEffect(() => {
+        askPermission();
+
+        const socket = io('http://192.168.1.4:8765');
+        socketRef.current = socket;
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+        // Replace with your server IP
+
+
+        return () => {
+            socket.disconnect();// Clean up WebSocket connection when component unmounts
+        };
+    }, []);
+
+    const askPermission = async () => {
+        await Camera.requestCameraPermission();
+        await Camera.requestMicrophonePermission();
+    };
+
+    if (!hasPermission) return <PermissionsPage />;
+    if (!device) return <NoCameraDeviceError />;
+
+    const frameProcessor = useFrameProcessor((frame) => {
+        'worklet';
+
+        // Resize the frame
+        const resized = resize(frame, {
+            scale: {
+                width: 192,
+                height: 192,
+            },
+            pixelFormat: 'rgb',
+            dataType: 'uint8',
+        });
+
+        // Convert the resized frame to a Uint8Array (raw RGB bytes)
+        const byteArray = new Uint8Array(resized);
+
+        // Call a JS function using runOnJS
+        runOnJS(() => {
+            console.log('Frame processed and sending to server');
+
+            // Send the frame data to the server via WebSocket
+            if (socketRef.current ) {
+                socketRef.current.emit('frame', byteArray);
+            } else {
+                console.warn('Socket is not connected.');
+            }
+        })();
+    }, []);
+
+
+    const sendToServer = (byteArray: Uint8Array) => {
+        // Ensure socket is connected
+        if (socketRef.current ) {
+            socketRef.current.emit('frame', byteArray);
+        } else {
+            console.warn('Socket is not connected.');
+        }
+    };
+
+    return (
+        <Camera
+            style={StyleSheet.absoluteFill}
+            device={device}
+            isActive={true}
+            frameProcessor={frameProcessor}
+            // Adjust FPS if needed
+        />
+    );
+}

@@ -15,7 +15,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anonymous.s_project"
     },
     "web": {
       "bundler": "metro",
@@ -31,6 +32,14 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Fit needs access to your Camera.",
+          "enableMicrophonePermission": true,
+          "microphonePermissionText": "Fit needs access to your Microphone."
         }
       ]
     ],
