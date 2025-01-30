@@ -49,7 +49,7 @@ const App = () => {
                             setStreaming(false);
                         } else {
                             try {
-                                ref.current?.startStreaming('vwtr-zqsx-wt1x-c450-59hy','rtmp://a.rtmp.youtube.com/live2');
+                                ref.current?.startStreaming('test','rtmp://192.168.137.1/live');
                                 setStreaming(true);
                             }
                             catch (e) {
