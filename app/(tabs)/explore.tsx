@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const explore = () => {
-  const navigation = useNavigation();
+const Explore = () => {
+  const router = useRouter();
 
   return (
     <LinearGradient
@@ -15,7 +15,7 @@ const explore = () => {
         <Text style={styles.title}>Welcome to Mirror AI</Text>
         <TouchableOpacity
           style={styles.getStartedButton}
-          onPress={() => navigation.navigate('login')}
+          onPress={() => router.push('/login')} // Navigate using Expo Router
         >
           <LinearGradient
             colors={['#4A00E0', '#8E2DE2']}
@@ -34,25 +34,6 @@ const explore = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    height: 80,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    backgroundColor: 'transparent',
-  },
-  loginButton: {
-    backgroundColor: '#fff',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  loginText: {
-    color: '#4A00E0',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
   content: {
     flex: 1,
@@ -87,4 +68,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default explore;
+export default Explore;
