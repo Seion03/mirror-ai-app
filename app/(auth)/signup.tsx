@@ -26,7 +26,6 @@ const SignupPage = () => {
   const router = useRouter();
 
   const handleSignup = async () => {
-    // ... [Existing handleSignup logic remains unchanged]
     if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'All fields are required');
       return;
@@ -51,7 +50,7 @@ const SignupPage = () => {
 
       setUser({ name, email }); // Store user in context
       Alert.alert('Success', 'Account created successfully!');
-      router.push('/index');
+      router.replace('/(tabs)'); // Navigate to tabs after signup
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
       Alert.alert('Signup Error', errorMessage);
