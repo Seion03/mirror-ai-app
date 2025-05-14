@@ -1,6 +1,7 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Tabs, usePathname } from 'expo-router';
+import React, { useEffect } from 'react';
 import { Platform } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
@@ -10,11 +11,21 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const router = useRouter();
+  const pathname = usePathname();
+  
+  // This redirects to the home tab when users just enter the tabs directory
+  useEffect(() => {
+    if (pathname === '/(tabs)') {
+      router.replace('/(tabs)/index');
+    }
+  }, [pathname]);
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarInactiveTintColor: Colors[colorScheme ?? 'light'].tabIconDefault,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
@@ -23,7 +34,9 @@ export default function TabLayout() {
             // Use a transparent background on iOS to show the blur effect
             position: 'absolute',
           },
-          default: {},
+          default: {
+            backgroundColor: colorScheme === 'dark' ? '#1a1a2e' : '#ffffff',
+          },
         }),
       }}>
       <Tabs.Screen
@@ -34,10 +47,23 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="profile"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Profile',
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
+        }}
+      />
+      {/* We need to keep room and inroom in tabs but hide them from the tab bar */}
+      <Tabs.Screen
+        name="room"
+        options={{
+          href: null, // This makes it not appear in the tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="inroom"
+        options={{
+          href: null, // This makes it not appear in the tab bar
         }}
       />
     </Tabs>

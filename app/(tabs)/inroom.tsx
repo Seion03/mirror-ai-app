@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter, useLocalSearchParams } from 'expo-router';// Import useRouter for navigation
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { collection, query, where, getDocs, DocumentData, updateDoc, arrayUnion, doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../scripts/firebase';
 import { getAuth } from 'firebase/auth';
-import { useUser } from '../../context/UserContext'; // Import useUser hook
+import { useUser } from '../../context/UserContext';
 
 const InRoomTab = () => {
-  const router = useRouter(); // Initialize router for navigation
+  const router = useRouter();
   const { roomCode, userScore } = useLocalSearchParams();
   const [roomData, setRoomData] = useState<DocumentData | null>(null);
   const [participants, setParticipants] = useState<Array<{ id: number; [key: string]: any }>>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useUser(); // Get user data from context
+  const { user } = useUser();
   const [isCreator, setIsCreator] = useState(false);
   const [roomEnded, setRoomEnded] = useState(false);
 
@@ -37,31 +37,27 @@ const InRoomTab = () => {
 
         const userName = user.name || 'Anonymous';
 
-        // Get room data
         const roomQuery = query(
           collection(db, 'rooms'),
           where('roomCode', '==', roomCode)
         );
         const roomSnapshot = await getDocs(roomQuery);
-        
+
         if (!roomSnapshot.empty) {
           const roomDoc = roomSnapshot.docs[0];
           const roomData = roomDoc.data();
-          roomData.id = roomDoc.id; // Ensure the id is set
+          roomData.id = roomDoc.id;
           setRoomData(roomData);
 
-          // Check if the current user is the creator of the room
           if (roomData.creatorId === currentUser.uid) {
             setIsCreator(true);
           }
 
-          // Add current user to participants array in the room document
           const roomRef = doc(db, 'rooms', roomDoc.id);
           await updateDoc(roomRef, {
             participants: arrayUnion({ name: userName, score: userScore || 0 })
           });
 
-          // Listen for real-time updates to the participants
           onSnapshot(roomRef, (doc) => {
             const updatedRoomData = doc.data();
             if (updatedRoomData) {
@@ -89,7 +85,7 @@ const InRoomTab = () => {
       });
 
       Alert.alert('Room Closed', 'The room has been closed by the creator.');
-      router.push('/room'); // Navigate to room.tsx
+      router.push('/room');
     } catch (error) {
       console.error('Error exiting room:', error);
     }
@@ -105,7 +101,7 @@ const InRoomTab = () => {
       });
 
       Alert.alert('Room Ended', 'The room has been ended by the creator.');
-      router.push('/room'); // Navigate to room.tsx
+      router.push('/room');
     } catch (error) {
       console.error('Error ending room:', error);
     }
@@ -129,7 +125,7 @@ const InRoomTab = () => {
           if (roomData.participants.length === 0) {
             setRoomEnded(true);
             Alert.alert('Room Ended', 'The room has been ended by the creator.');
-            router.push('/room'); // Navigate to room.tsx
+            router.push('/room');
           }
         }
       } catch (error) {
@@ -137,73 +133,104 @@ const InRoomTab = () => {
       }
     };
 
-    const interval = setInterval(checkRoomStatus, 5000); // Check every 5 seconds
+    const interval = setInterval(checkRoomStatus, 5000);
 
     return () => clearInterval(interval);
   }, [roomCode, roomEnded]);
 
-  // Navigate back to the Room tab
   const navigateBack = () => {
-    router.push('/room'); // Navigate to room.tsx
+    router.push('/room');
   };
 
   const startWorkout = () => {
-    Alert.alert('Workout Started', 'The workout has been started!');
-    // Add any additional logic for starting the workout here
+    // Navigate to the exercise page with room code
+    router.push({
+      pathname: '/(workouts)/index1' as any,
+      params: { roomCode }
+    });
   };
 
   return (
     <View style={styles.mainContainer}>
       <LinearGradient
-        colors={['#FFFFFF', '#87CEEB']}
+        colors={['#1a2a6c', '#2a3a7c']}
         style={styles.gradientContainer}
       >
-        <TouchableOpacity style={styles.backButton} onPress={navigateBack}>
-          <Text style={styles.backButtonText}>{"< Back"}</Text>
-        </TouchableOpacity>
+        <View style={styles.overlay}>
+          <TouchableOpacity 
+            style={[styles.iconButton, styles.backButton]} 
+            onPress={navigateBack}
+          >
+            <Text style={styles.buttonText}>←</Text>
+          </TouchableOpacity>
 
-        {isCreator && (
-          <>
-            <TouchableOpacity style={styles.exitButton} onPress={exitRoom}>
-              <Text style={styles.exitButtonText}>Exit Room</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.endButton} onPress={endRoom}>
-              <Text style={styles.endButtonText}>End Room</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.startButton} onPress={startWorkout}>
-              <Text style={styles.startButtonText}>START WORKOUT</Text>
-            </TouchableOpacity>
-          </>
-        )}
-
-        <View style={styles.headerContainer}>
-          <Text style={styles.headerText}>
-            {roomData ? roomData.workout : 'Loading...'}
-          </Text>
-          <Text style={styles.roomCodeText}>Room: {roomCode}</Text>
-        </View>
-
-        <ScrollView style={styles.leaderboardContainer}>
-          <View style={styles.leaderboardHeader}>
-            <Text style={[styles.leaderboardText, styles.headerCol]}>S.No</Text>
-            <Text style={[styles.leaderboardText, styles.headerCol]}>Name</Text>
-            <Text style={[styles.leaderboardText, styles.headerCol]}>Score</Text>
-          </View>
-          
-          {loading ? (
-            <Text style={styles.loadingText}>Loading participants...</Text>
-          ) : participants.length > 0 ? (
-            participants.map((person, index) => (
-              <View key={index} style={styles.leaderboardRow}>
-                <Text style={[styles.leaderboardText, styles.rowCol]}>{index + 1}</Text>
-                <Text style={[styles.leaderboardText, styles.rowCol]}>{person.name}</Text>
-                <Text style={[styles.leaderboardText, styles.rowCol]}>{person.score || 0}</Text>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.noDataText}>No participants yet</Text>
+          {isCreator && (
+            <View style={styles.creatorButtonsContainer}>
+              <TouchableOpacity 
+                style={[styles.iconButton, styles.startButton]} 
+                onPress={startWorkout}
+              >
+                <Text style={styles.startButtonText}>START</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.iconButton, styles.endButton]} 
+                onPress={endRoom}
+              >
+                <Text style={styles.buttonText}>END</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.iconButton, styles.exitButton]} 
+                onPress={exitRoom}
+              >
+                <Text style={styles.buttonText}>EXIT</Text>
+              </TouchableOpacity>
+            </View>
           )}
-        </ScrollView>
+
+          <View style={styles.headerContainer}>
+            <Text style={styles.workoutTitle}>
+              {roomData ? roomData.workout : 'Loading...'}
+            </Text>
+            <LinearGradient
+              colors={['#4776E6', '#8E54E9']}
+              start={{x: 0, y: 0}}
+              end={{x: 1, y: 0}}
+              style={styles.roomCodeContainer}
+            >
+              <Text style={styles.roomCodeText}>Room Code: {roomCode}</Text>
+            </LinearGradient>
+          </View>
+
+          <View style={styles.leaderboardWrapper}>
+            <Text style={styles.leaderboardTitle}>LEADERBOARD</Text>
+            <ScrollView style={styles.leaderboardContainer}>
+              <LinearGradient
+                colors={['#FF416C', '#FF4B2B']}
+                style={styles.leaderboardHeader}
+              >
+                <Text style={[styles.leaderboardText, styles.headerCol]}>RANK</Text>
+                <Text style={[styles.leaderboardText, styles.headerCol]}>NAME</Text>
+                <Text style={[styles.leaderboardText, styles.headerCol]}>SCORE</Text>
+              </LinearGradient>
+              
+              {loading ? (
+                <Text style={styles.statusText}>Loading participants...</Text>
+              ) : participants.length > 0 ? (
+                participants.map((person, index) => (
+                  <View key={index} style={styles.leaderboardRow}>
+                    <Text style={[styles.participantText, styles.rowCol]}>#{index + 1}</Text>
+                    <Text style={[styles.participantText, styles.rowCol]}>{person.name}</Text>
+                    <Text style={[styles.participantText, styles.rowCol]}>{person.score || 0}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.statusText}>No participants yet</Text>
+              )}
+            </ScrollView>
+          </View>
+        </View>
       </LinearGradient>
     </View>
   );
@@ -215,165 +242,139 @@ const styles = StyleSheet.create({
   },
   gradientContainer: {
     flex: 1,
-    alignItems: 'center',
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.1)',
     padding: 20,
+  },
+  iconButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
   },
   backButton: {
     position: 'absolute',
     top: 40,
     left: 20,
-    backgroundColor: '#4169E1', // Royal blue for back button
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 5,
+    backgroundColor: '#4776E6',
   },
-  backButtonText: {
-    color: '#fff', // White text
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  headerContainer: {
-    marginVertical: 70,
-    padding: 10,
-    borderRadius: 10,
-    backgroundColor: '#4169E1', // Royal blue for header
-    width: '100%',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 5,
-  },
-  headerText: {
-    fontSize: 24,
-    color: '#fff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  leaderboardContainer: {
-    width: '100%',
-    marginTop: 10,
-  },
-  leaderboardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#4169E1', // Royal blue for header row
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-  leaderboardRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#F0F8FF', // Light background for rows
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    marginBottom: 5,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 2,
-  },
-  leaderboardText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  headerCol: {
-    color: '#fff',
-    textAlign: 'center',
-    flex: 1,
-  },
-  rowCol: {
-    textAlign: 'center',
-    flex: 1,
-  },
-  roomCodeText: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 5,
-    textAlign: 'center',
-  },
-  loadingText: {
-    textAlign: 'center',
-    marginTop: 20,
-    fontSize: 16,
-    color: '#666',
-  },
-  noDataText: {
-    textAlign: 'center',
-    marginTop: 20,
-    fontSize: 16,
-    color: '#666',
-  },
-  exitButton: {
+  creatorButtonsContainer: {
     position: 'absolute',
     top: 40,
     right: 20,
-    backgroundColor: '#FF6347', // Tomato color for exit button
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 5,
-  },
-  exitButtonText: {
-    color: '#fff', // White text
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  endButton: {
-    position: 'absolute',
-    top: 40,
-    right: 100,
-    backgroundColor: '#FF4500', // Orange red color for end button
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 5,
-  },
-  endButtonText: {
-    color: '#fff', // White text
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    flexDirection: 'row',
+    gap: 10,
   },
   startButton: {
-    position: 'absolute',
-    top: 40,
-    right: 180,
-    backgroundColor: '#32CD32', // Lime green color for start button
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 5,
+    backgroundColor: '#32CD32',
+  },
+  endButton: {
+    backgroundColor: '#FF416C',
+  },
+  exitButton: {
+    backgroundColor: '#FF4B2B',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   startButtonText: {
-    color: '#fff', // White text
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  headerContainer: {
+    marginTop: 100,
+    alignItems: 'center',
+    gap: 15,
+  },
+  workoutTitle: {
+    fontSize: 28,
+    color: '#fff',
+    fontWeight: '800',
+    letterSpacing: 2,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  roomCodeContainer: {
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+  },
+  roomCodeText: {
+    color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
+    letterSpacing: 1,
+  },
+  leaderboardWrapper: {
+    marginTop: 30,
+    flex: 1,
+  },
+  leaderboardTitle: {
+    color: '#fff',
+    fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
+    letterSpacing: 3,
+    marginBottom: 15,
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  leaderboardContainer: {
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    overflow: 'hidden',
+  },
+  leaderboardHeader: {
+    flexDirection: 'row',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+  },
+  leaderboardText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  headerCol: {
+    flex: 1,
+    textAlign: 'center',
+  },
+  leaderboardRow: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  participantText: {
+    color: 'rgba(255,255,255,0.9)',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  rowCol: {
+    flex: 1,
+    textAlign: 'center',
+  },
+  statusText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 16,
+    textAlign: 'center',
+    padding: 20,
   },
 });
 

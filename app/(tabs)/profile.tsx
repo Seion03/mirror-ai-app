@@ -13,8 +13,9 @@ import {
   Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
-import { getDoc, setDoc, doc,updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { getDoc, setDoc, doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db} from '../../scripts/firebase';
+
 const Profile = () => {
   const [isFirstLogin, setIsFirstLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
@@ -96,15 +97,12 @@ const Profile = () => {
   };
 
   const handleSubmit = async () => {
-
     try {
       const userId = auth.currentUser?.uid;
       if (!userId) {
         Alert.alert('Error', 'User not authenticated');
         return;
       }
-
-      // Convert age to number and prepare profile data
 
       // Save to Firestore
       await updateUserProfile(userId, profile);
@@ -116,6 +114,7 @@ const Profile = () => {
       Alert.alert('Error', 'Failed to save profile data');
     }
   };
+
   if (isFirstLogin) {
     return (
       <SafeAreaView style={styles.container}>
@@ -123,8 +122,10 @@ const Profile = () => {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.container}
         >
-          <ScrollView style={styles.formContainer}>
+          <ScrollView style={styles.formContainer} contentContainerStyle={{paddingTop: 60}}>
             <View style={styles.formInner}>
+              <Text style={styles.formTitle}>Complete Your Profile</Text>
+              
               <Text style={styles.formLabel}>Name</Text>
               <TextInput
                 style={styles.input}
@@ -190,7 +191,7 @@ const Profile = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
+      <ScrollView contentContainerStyle={{paddingTop: 60}}>
         <View style={styles.header}>
           <View style={styles.profileInfo}>
             <Image
@@ -251,6 +252,12 @@ const styles = StyleSheet.create({
   },
   formInner: {
     padding: 16,
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 24,
+    textAlign: 'center',
   },
   formLabel: {
     fontSize: 16,

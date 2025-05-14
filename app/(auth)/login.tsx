@@ -24,7 +24,6 @@ const LoginPage = () => {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      
       const userQuery = query(collection(db, 'users'), where('email', '==', email));
       const querySnapshot = await getDocs(userQuery);
 
@@ -37,7 +36,7 @@ const LoginPage = () => {
       setUser({ email: userData.email, name: userData.name });
       Alert.alert('Success', 'Logged in successfully!');
       console.log('User logged in:', email);
-      router.push('/index');
+      router.replace('/(tabs)'); // Use replace instead of push
     } catch (error) {
       Alert.alert('Login Error', (error as any).message);
       console.error(error);
@@ -135,8 +134,8 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '50%',
-    height: 45,  // Made shorter for more square appearance
-    borderRadius: 15,  // Reduced border radius for slightly rounded edges
+    height: 45,
+    borderRadius: 15,
     marginTop: 20,
     overflow: 'hidden',
   },

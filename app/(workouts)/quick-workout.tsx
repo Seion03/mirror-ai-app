@@ -1,19 +1,38 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 
-const ExerciseButtons = () => {
+const QuickWorkoutPage = () => {
+  const router = useRouter();
+  
+  const handleSquatPress = () => {
+    router.push('./index1');  // ✅ CORRECT - relative path in same directory
+  };
+  
+  const handlePushUpPress = () => {
+    router.push('./index1');  // ✅ CORRECT - relative path in same directory
+  };
+  
+  const goBack = () => {
+    router.back();
+  };
+
   return (
     <LinearGradient
       colors={['#1a2a6c', '#2a3a7c']}
       style={styles.container}
     >
       <View style={styles.overlay}>
+        <TouchableOpacity style={styles.backButton} onPress={goBack}>
+          <Text style={styles.backButtonText}>← Back</Text>
+        </TouchableOpacity>
+      
         <Text style={styles.header}>CHOOSE YOUR WORKOUT</Text>
         <Text style={styles.subHeader}>Start Your Fitness Journey</Text>
 
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={handleSquatPress}>
             <LinearGradient
               colors={['#FF416C', '#FF4B2B']}
               style={styles.buttonGradient}
@@ -25,7 +44,7 @@ const ExerciseButtons = () => {
             </LinearGradient>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={handlePushUpPress}>
             <LinearGradient
               colors={['#4776E6', '#8E54E9']}
               style={styles.buttonGradient}
@@ -55,6 +74,17 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 10,
+  },
+  backButtonText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '600',
   },
   header: {
     fontSize: 28,
@@ -114,4 +144,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ExerciseButtons;
+export default QuickWorkoutPage;

@@ -23,7 +23,16 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     console.log('Logging out...');
-    signOut(auth);
+    signOut(auth).then(() => {
+      // After successful logout, redirect to explore page
+      router.replace('/(auth)/explore');
+    }).catch(error => {
+      console.error('Error signing out:', error);
+    });
+  };
+
+  const handleQuickWorkout = () => {
+    router.push('/(workouts)/quick-workout' as any);
   };
 
   return (
@@ -58,7 +67,7 @@ const Dashboard = () => {
             {/* Quick Workout */}
             <TouchableOpacity
               style={styles.workoutOption}
-              onPress={() => router.push('/quick-workout')}
+              onPress={handleQuickWorkout}
             >
               <LinearGradient
                 colors={['#FF416C', '#FF4B2B']}

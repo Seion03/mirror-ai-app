@@ -94,7 +94,7 @@ const App = () => {
                                 console.log('userId:', userId);
                                 
                                 // Construct RTMP URL with query parameter
-                                const rtmpUrl = "rtmp://192.168.43.28/live";
+                                const rtmpUrl = "rtmp://192.168.143.81/live";
                                 
                                 ref.current?.startStreaming(
                                     'test', 
